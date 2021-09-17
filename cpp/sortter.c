@@ -156,7 +156,7 @@ int insert_sc2(int num,int ele[])
 //3. 组内边界判定；
 //4. 组内对比循环：对比已排数列和待排数值，找到比待排数大的数值位置并记录；
 //5. 组内插入循环：将已排数列中找到位置后续的数值向后在组内移一位，将待排数值插入；
-int insert_sg(int num,int ele[],int gap)
+int shell_core(int num,int ele[],int gap)
 {
     int time,i,j,k,temp;
     for(time=0;time<gap;time++)
@@ -184,17 +184,60 @@ int shell_s(int num,int ele[])
     int f1,par=num/2;
     while(par!=0)
     {
-        insert_sg(num,ele,par);
+        shell_core(num,ele,par);
         par=par/2;
     }
     return 0;
 }
-//归并排序基本逻辑
-//分循环：
-//并循环：
-int merge_s(int num,int ele[])
+//归并-插入排序基本逻辑
+//1. 分循环：取中值，将当前数组分为两个部分，记录分开的两个数组的首元素位置；
+//2. 并循环：以前半部分的数组作为已排数列，设置位置变量从后半部分数组开头向后循环，并进行插入，完成插入就退出；循环；
+int merge_in(int be,int en,int ele[])
 {
-
+   int i,j,k,mid,temp;
+   if((en-be)<=1) return 0;
+   else
+    {
+        mid=(be+en)/2;
+        merge_in(be,mid,ele);
+        merge_in(mid+1,en,ele); 
+        for(i=mid+1;i<=en;i++)
+        {
+            j=be;
+            while(ele[j]<ele[i] && j<i) j++;
+            temp=ele[i];
+            for(k=i;k>j;k--)
+            ele[k]=ele[k-1];
+            ele[j]=temp;
+        }
+        return 0;
+    }
+}
+//归并排序基本逻辑
+//1. 分循环：取中值，将当前数组分为两个部分，记录分开的两个数组的首元素位置；
+//2. 并循环：开设新数组，并设置两个位置变量用以检索分开的数组，找到各分数组中较小数则写入新数组，最后将剩余数量全部写入新数组，再转录回原数组；
+int merge_s(int be,int en,int ele[])
+{
+   int i,j,k,mid;
+   int temp[en-be+1];
+   if((en-be)<=1) return 0;
+   else
+    {
+        mid=(be+en)/2;
+        merge_in(be,mid,ele);
+        merge_in(mid+1,en,ele); 
+        i=be;
+        j=mid+1;
+        k=0;
+        while(i<=mid && j<=en)
+        if(ele[i]<ele[j]) temp[k++]=ele[i++];
+        else temp[k++]=ele[j++];
+        while(i<=mid) temp[k++]=ele[i++];
+        while(j<=en) temp[k++]=ele[j++];
+        for(;k>0;k--)
+        ele[be+k-1]=temp[k-1];
+        return 0;
+    }
 }
 int main()
 {
@@ -208,7 +251,8 @@ int main()
     printf("5 - Insert Dichotomy Sort\n");
     printf("6 - Better Insert Dichotomy Sort\n");
     printf("7 - Shell Sort\n");
-    printf("8 - Merge Sort\n");
+    printf("8 - Merge Insert Sort\n");
+    printf("9 - Merge Sort\n");
     printf("Other - Quit\n");
     scanf("%d",&ch);
     gchar=getchar();
@@ -255,9 +299,14 @@ int main()
             shell_s(n,a);
             break;
         }
-        case 8;
+        case 8:
         {
-            merge_s(n,a);
+            merge_in(0,n-1,a);
+            break;
+        }
+        case 9:
+        {
+            merge_s(0,n-1,a);
             break;
         }
         default:
