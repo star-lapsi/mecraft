@@ -2,12 +2,40 @@
 #include<string.h>
 struct variaty0
 {
-    char va_name[100];
-    char va_type[100];
-    int va_type;
-    char va_value[100];
-    int va_value;
+    char va_na[100];
+    char type_na[100];
+    int type_flag;
+    char va_val[100];
+    int fm_val;
+    int lo_val;
 };
+struct file_type
+{
+    char fi_name[100];
+    int fi_flag;
+};
+int input_ck(char val)
+{
+    if(val=='<') return 1;
+    if(val=='#') return 2;
+    if(val=='{') return 3;
+}
+int err_pr(int err)
+{
+    switch (err)
+    {
+    case 1:
+        break;
+    case 2:
+        break;
+    case 3:
+        break;
+    case 4:
+        break;
+    default:
+        break;
+    }
+}
 int file_type_c(char arr[])
 {
     int ans=0;
@@ -51,46 +79,93 @@ int variaty_type_c(char arr[])
 }
 int main()
 {
-    struct variaty0 va_arr[1000];
-    int ft_flag=0,ft=0,ft_ans=1;        //ft_flag为文件类型读取进度标识；ft为读取标识；ft_ans为文件类型结果；
-    int va_be=0,va_en=0,va_flag1=0,va_flag2=0,va_tag=0,va_ans=0;   //va_be、va_en为变量单行读取进度标识；va_flag1为变量名读取标识；va_flag2为变量类型读取标识；va_tag为变量切换标识；
-    char ch,f_type[20],va_type[20],va_name[100];
+    struct variaty0 var[1000];
+    struct file_type ft;
+    char ch;
+    char tmp_f[100],tmp_vn[100],tmp_vt[100],tmp_va[100],va_va[100];
+    int re_flag=0,vn_flag=0,va_flag=0,ma_flag=0,err_flag=0;
+    int ft_key=0,vn_key=0,vt_key=0,vv_key=0,va_key=0;
+    int vn_wr=0,vt_wr=0,vn_rd=0,vv_rd=0;
+    int se_flag=0,vard_flag;
     while(scanf("%c",&ch)!=EOF)
     {
-        if(ch=='>') 
+        if(re_flag==-1) err_pr(err_flag);
+        if(re_flag==0) re_flag=input_ck(ch);
+        if(re_flag==1) 
         {
-            ft_flag=0;
-            ft_ans=file_type_c(f_type);
-            f_type[ft]='\0';
+            if(ch=='>')
+            {
+                re_flag=0;
+                tmp_f[ft_key]='\0';
+                strcpy(tmp_f,ft.fi_name);
+            }
+            else
+            {
+                tmp_f[ft_key++]=ch;
+            }
         }
-        if(ft_flag==1) f_type[ft++]=ch;
-        if(ch=='<') ft_flag=1;
-        if(ft_ans==0) break; 
-        if(ch==';')
+        if(re_flag==2)
         {
-            va_arr[va_tag].va_name[va_flag2]='\0';
-            va_be=0;
-            va_en=0;
-            va_ans=variaty_type_c(va_arr[va_tag].va_value);
-            va_tag++;
+            if(ch==';')
+            {
+                re_flag=0;
+                vn_flag=0;
+            }
+            else if(vn_flag==1)
+            {
+                if(ch==':')
+                {
+                    vn_flag=2;
+                    tmp_vn[vn_key]='\0';
+                    strcpy(var[ma_flag].va_na,tmp_vn);
+                }
+                if(ch<='z' && ch>='a' && vn_wr==0) vn_wr=1;
+                if(vn_wr==1) tmp_vn[vn_key++]=ch;
+            }
+            else if(vn_flag==2)
+            {
+                if(ch==';')
+                {
+                    vn_flag=0;
+                    re_flag=0;
+                    tmp_vt[vt_key]='\0';
+                    strcpy(var[ma_flag].type_na,tmp_vt);
+                    var[ma_flag].type_flag=variaty_type_c(var[ma_flag].type_na);
+                    ma_flag++;
+                }
+                if(ch<='z' && ch>='a' && vt_wr==0) vt_wr=1;
+                if(vn_wr==1) tmp_vt[vt_key++]=ch;
+            }
         }
-        if(ch==':')
+        if(re_flag==3)
         {
-            va_arr[va_tag].va_name[va_flag1]='\0';
-            va_flag2=0;
-            va_be=0;
-            va_en=1;
+            if(ch=='}')
+            {
+                re_flag=0;
+                va_flag=0;
+            }
+            if(va_flag==1)
+            {
+                if(ch=='"') vn_rd=!vn_rd;
+                if(vn_rd==1) tmp_va[vv_key++]=ch;
+                else if(vn_rd==0)
+                {
+                    tmp_va[vv_key]='\0';
+                    while(strcmp(tmp_va,var[se_flag].va_na)!=0 && se_flag<=ma_flag) se_flag++;
+                    vard_flag=se_flag;
+                }
+                if(ch==':') va_flag=2;
+            }
+            if(va_flag==2)
+            {
+                if(ch=='"') vv_rd=!vv_rd;
+                if(vv_rd==1) va_va[va_key++]=ch;
+                else if(vn_rd==0)
+                {
+                    va_va[va_key]='\0';
+                    strcpy(var[vard_flag].va_val,va_va);
+                }
+                if (ch==';') va_flag=0;
+            }
         }
-        if(ch=='#')
-        {
-            va_flag1=0;
-            va_be=1;
-            va_en=0;
-        }
-        if(va_be==1 && va_name_ck(ch)==1)
-            va_arr[va_tag].va_name[va_flag1++]=ch;
-        if(va_en==1 && va_type_ck(ch)==1)
-            va_arr[va_tag].va_name[va_flag2++]=ch;
-        if(va_ans==0) break;
-
-}
+    }
