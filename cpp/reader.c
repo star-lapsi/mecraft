@@ -1,16 +1,13 @@
 #include<stdio.h>
 #include<string.h>
 //变量结构体内容：
-//va_na为变量名，type_na为变量类型，type_flag为变量类型标识；
-//va_val为变量值，fm_val标准值，lo_val变量长度；
+//va_na为变量名，type_na为变量类型，type_flag为变量类型标识，va_val为变量值；
 struct variaty0
 {
     char va_na[100];
     char va_tp[100];
     int va_flag;
     char va_val[100];
-    int fm_val;
-    int lo_val;
 };
 //文件结构体内容：
 //ft_name为文件类型，ft_long为文件类型长度，ft_flag为文件类型标识，1为整形串，2为字符串，3为复合型；
@@ -43,6 +40,10 @@ int err_pr(int err)
         printf("变量类型不存在！\n");
         break;
     case 4:
+        printf("未找到该变量！\n");
+        break;
+    case 5:
+        printf("变量值与变量类型不符！\n");
         break;
     default:
         break;
@@ -57,7 +58,7 @@ char ft_read(char val)
 //文件类型读取校验函数，依据具体类型返回检验结果，返回-1的情况为检验失败；
 int ft_check(char arr[])
 {
-    puts(arr);
+    //puts(arr); 调试用；
     if(strcmp(arr,"numbers")==0) return 1;
     else if(strcmp(arr,"strings")==0) return 2;
     else if(strcmp(arr,"mixs")==0) return 3;
@@ -79,7 +80,7 @@ char vt_read(char val)
 int va_name_check(char arr[])
 {
     int i,flag=1;
-    puts(arr);
+    //puts(arr); 调试用；
     for(i=0;i<strlen(arr);i++)
     if((arr[i]<='Z'&&arr[i]>='A')||(arr[i]<='z'&&arr[i]>='a')||(arr[i]<='9'&&arr[i]>='0')) flag=1;
     else
@@ -93,13 +94,75 @@ int va_name_check(char arr[])
 int va_type_check(char arr[])
 {
     int ans=0;
-    puts(arr);
+    //puts(arr);  调试用；
     if(strcmp(arr,"integer")==0) ans=1;
     if(strcmp(arr,"float")==0) ans=2;
-    if(strcmp(arr,"char")==0) ans=3;
-    if(strcmp(arr,"string")==0) ans=4;
-    if(strcmp(arr,"addr")==0) ans=5;
+    if(strcmp(arr,"string")==0) ans=3;
+    if(strcmp(arr,"addr")==0) ans=4;
     return ans;
+}
+//待赋值变量名读取标准化函数；
+char vv_read(char val)
+{
+    if(val=='"') return '\0';
+    else return val;
+}
+//赋值结果读取标准化函数；
+char va_read(char val)
+{
+    if(val=='"') return '\0';
+    else return val;
+}
+//变量名查找函数，找到后返回变量位置值，若未找到则返回-1；
+int vn_search(char arr[], struct variaty0 *point, int num)
+{
+    int i=0;
+    puts(arr);
+    puts(point->va_na);
+    while(i<num && strcmp(arr,point[i].va_na)==0) i++;
+    if(i<num) return i;
+    else return -1;
+}
+//变量值校验函数，返回校验结果，0为校验通过，-1为校验错误；
+int va_value_check(int flag, char arr[])
+{
+    int i,tag=0,ptag=0;
+    puts(arr);
+    if(flag==1)
+    {
+        for(i=0;i<strlen(arr);i++)
+        if(arr[i]>'9' || arr[i]<'0') 
+        {
+            tag=1;
+            break;
+        }
+        if(tag) return -1;
+        else return 0;
+    }
+    else if(flag==2)
+    {
+        for(i=0;i<strlen(arr);i++)
+        if(arr[i]>'9' || arr[i]<'0')
+        {
+            tag=1;
+            break;
+        }
+        else if(arr[i]=='.') ptag++;
+        if(tag==1 || ptag!=1) return -1;
+        else return 0;
+    }
+    else if(flag==4)
+    {
+        for (i=0;i<strlen(arr);i++)
+        if(arr[i]<'0' || (arr[i]>'9' && arr[i]<'A') || (arr[i]>'Z' && arr[i]<'a') || arr[i]>'z')
+        {
+            tag=1;
+            break;
+        }
+        if(tag) return -1;
+        else return 0;    
+    }
+    else if(flag==3) return 0;
 }
 int main()
 {
@@ -107,21 +170,24 @@ int main()
     struct file_type ft;
     char ch[2];
     //临时字符缓存，ch[0]为默认缓存，ch[1]为转义缓存；
-    char tmp_f[100],tmp_vn[100],tmp_vt[100],tmp_va[100],va_va[100];
+    char tmp_f[100],tmp_vn[100],tmp_vt[100],tmp_vv[100],tmp_va[100];
     //tmp_f为文件状态缓存数组；
     //tmp_vn为变量名缓存数组；
     //tmp_vt为变量类型缓存数组；
-    int re_flag=0,vn_flag=0,va_flag=0,ma_flag=0,err_flag=0; 
+    //tmp_vv为带赋值变量名称缓存数组；
+    //tmp_va为赋值结果名称缓存数组；
+    int re_flag=0,vn_flag=0,va_flag=0,ma_flag=0,se_flag=0,err_flag=0; 
     //re_flag为主状态标识，用于确定当前读写模块（0为待读入、1为文件类型、2为变量声明、3为变量赋值）；
     //vn_flag为子状态标识，用于确定具体模块内读写区域；
     //ma_flag为读取顺序标识，用于确定当前读入的变量数量；
     //err_flag为错误标识，用于反馈错误类型，默认情况下，文件类型错误、变量不存在等都属于错误情况，都要进行退出；
+    //se_flag为查找变量名循环体，当找到对应的变量名时标记位置，未找到则标注-1；
     int ft_key=0,vn_key=0,vt_key=0,vv_key=0,va_key=0;
     //ft_key为文件类型读取循环体，用于将文件类型字符串录入缓存；
     //vn_key为变量名读取循环体，用于将变量名字符串录入缓存；
     //vt_key为变量类型读取循环体，用于将变量类型字符串录入缓存；
-    int vn_wr=0,vt_wr=0,vn_rd=0,vv_rd=0;
-    int se_flag=0,vard_flag=0;
+    //vv_key为待赋值变量名称读取循环体，用于将待赋值变量名进行缓存；
+    //va_key为变量赋值读取循环体，用于将赋值结果进行缓存；
     while(scanf("%c",&ch[0])!=EOF)
     //单字符读入模式，后期需要考虑修改为流模式；
     {
@@ -140,6 +206,7 @@ int main()
                 ft.ft_long=strlen(tmp_f);
                 strcpy(tmp_f,ft.ft_name);
                 re_flag=0;
+                ft_key=0;
             }
             if(ft.ft_flag==-1) //文件类型读取报错流程；
             {
@@ -185,34 +252,45 @@ int main()
         }
         else if(re_flag==3) //主状态标识为3时，程序读取变量名和变量值；
         {
-            if(ch[0]=='}')
+            if(va_flag==0 && ch[0]=='"') va_flag=1; //开始变量名读取；
+            else 
             {
-                re_flag=0;
-                va_flag=0;
-            }
-            if(va_flag==1)
-            {
-                if(ch[0]=='"') vn_rd=!vn_rd;
-                if(vn_rd==1) tmp_va[vv_key++]=ch[0];
-                else if(vn_rd==0)
+                if(va_flag==1) tmp_vv[vv_key++]=vv_read(ch[0]);
+                if(va_flag==1 && ch[0]=='"') //结束变量名读取，并对缓存进行校验；
                 {
-                    tmp_va[vv_key]='\0';
-                    while(strcmp(tmp_va,var[se_flag].va_na)!=0 && se_flag<=ma_flag) se_flag++;
-                    vard_flag=se_flag;
+                    va_flag=2;
+                    se_flag=vn_search(tmp_vv,var,ma_flag); 
+                    if(se_flag==-1)
+                    {
+                        re_flag==-1;
+                        err_flag==4;
+                    }
+                    vv_key=0;
                 }
-                if(ch[0]==':') va_flag=2;
             }
-            if(va_flag==2)
+            if(va_flag==2 && ch[0]==':') va_flag=3;
+            if(va_flag==3 && ch[0]=='"') va_flag=4;
+            else 
             {
-                if(ch[0]=='"') vv_rd=!vv_rd;
-                if(vv_rd==1) va_va[va_key++]=ch[0];
-                else if(vn_rd==0)
-                {
-                    va_va[va_key]='\0';
-                    strcpy(var[vard_flag].va_val,va_va);
-                }
-                if (ch[0]==';') va_flag=0;
+                if(va_flag==4) tmp_va[va_key++]=va_read(ch[0]);
+                if(va_flag==4 && ch[0]=='"') //结束变量值读取，并对缓存进行校验；
+                    if(va_value_check(var[se_flag].va_flag,tmp_va)==-1) //校验变量值如果存在异常，则提示报错并退出循环；
+                    {
+                        va_key=0;
+                        re_flag=-1;
+                        va_flag=0;
+                        err_flag=5;
+                    }
+                    else
+                    {
+                        strcpy(var[se_flag].va_val,tmp_va);
+                        va_key=0;
+                        va_flag=5;
+                        se_flag=0;
+                    }
             }
+            if(va_flag==5 && ch[0]==';') va_flag=0;
+            if(va_flag==0 && ch[0]=='}') re_flag=0;
         }
     }
     printf("The Application is closed!\n");
