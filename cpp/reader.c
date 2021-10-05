@@ -10,12 +10,11 @@ struct variaty0
     char va_val[100];
 };
 //文件结构体内容：
-//ft_name为文件类型，ft_long为文件类型长度，ft_flag为文件类型标识，1为整形串，2为字符串，3为复合型；
+//ft_name为文件类型，ft_flag为文件类型标识，1为整形串，2为字符串，3为复合型；
 struct file_type
 {
     char ft_name[100];
     int ft_flag;
-    int ft_long;
 };
 //输入模块判定函数；
 int input_ck(char val)
@@ -44,6 +43,9 @@ int err_pr(int err)
         break;
     case 5:
         printf("变量值与变量类型不符！\n");
+        break;
+    case 6:
+        printf("变量值和文件类型不符！\n");
         break;
     default:
         break;
@@ -76,7 +78,7 @@ char vt_read(char val)
     if(val==';') return '\0';
     else return val;
 }
-//该函数用于校验变量名是否符合规则，变量名异常返回0，OK返回1；
+//该函数用于校验变量名是否符合规则，变量名异常返回-1，OK返回1；
 int va_name_check(char arr[])
 {
     int i,flag=1;
@@ -85,21 +87,28 @@ int va_name_check(char arr[])
     if((arr[i]<='Z'&&arr[i]>='A')||(arr[i]<='z'&&arr[i]>='a')||(arr[i]<='9'&&arr[i]>='0')) flag=1;
     else
     {
-        flag=0;
+        flag=-1;
         break;
     }
     return flag;
 }
-//该函数用于校验变量类型是否符合规则，如果类型正确返回具体标识，类型错误返回0；
+//该函数用于校验变量类型是否符合规则，如果类型正确返回具体标识，类型错误返回-1；
 int va_type_check(char arr[])
 {
-    int ans=0;
+    int ans=-1;
     //puts(arr);  调试用；
-    if(strcmp(arr,"integer")==0) ans=1;
-    if(strcmp(arr,"float")==0) ans=2;
-    if(strcmp(arr,"string")==0) ans=3;
-    if(strcmp(arr,"addr")==0) ans=4;
+    if(strcmp(arr,"integer")==0) ans=0;
+    if(strcmp(arr,"float")==0) ans=1;
+    if(strcmp(arr,"string")==0) ans=2;
+    if(strcmp(arr,"addr")==0) ans=3;
     return ans;
+}
+//文件名和变量类型匹配校验函数，如果匹配成功，返回0，否则返回-1；
+int va_ft_check(char arr[],int flag)
+{
+    if(flag==1 && va_type_check(arr)==2) return -1;
+    else if(flag==2 && (va_type_check(arr)==0 || va_type_check(arr)==1 || va_type_check(arr)==3)) return -1;
+    else return 0;
 }
 //待赋值变量名读取标准化函数；
 char vv_read(char val)
@@ -117,9 +126,9 @@ char va_read(char val)
 int vn_search(char arr[], struct variaty0 *point, int num)
 {
     int i=0;
-    puts(arr);
-    puts(point->va_na);
-    while(i<num && strcmp(arr,point[i].va_na)==0) i++;
+    //puts(arr); 调试用；
+    //puts(point->va_na); 调试用；
+    while(i<num && strcmp(arr,point[i].va_na)!=0) i++;
     if(i<num) return i;
     else return -1;
 }
@@ -127,8 +136,8 @@ int vn_search(char arr[], struct variaty0 *point, int num)
 int va_value_check(int flag, char arr[])
 {
     int i,tag=0,ptag=0;
-    puts(arr);
-    if(flag==1)
+    //puts(arr); 调试用；
+    if(flag==0)
     {
         for(i=0;i<strlen(arr);i++)
         if(arr[i]>'9' || arr[i]<'0') 
@@ -139,7 +148,7 @@ int va_value_check(int flag, char arr[])
         if(tag) return -1;
         else return 0;
     }
-    else if(flag==2)
+    else if(flag==1)
     {
         for(i=0;i<strlen(arr);i++)
         if(arr[i]>'9' || arr[i]<'0')
@@ -151,7 +160,7 @@ int va_value_check(int flag, char arr[])
         if(tag==1 || ptag!=1) return -1;
         else return 0;
     }
-    else if(flag==4)
+    else if(flag==3)
     {
         for (i=0;i<strlen(arr);i++)
         if(arr[i]<'0' || (arr[i]>'9' && arr[i]<'A') || (arr[i]>'Z' && arr[i]<'a') || arr[i]>'z')
@@ -162,7 +171,36 @@ int va_value_check(int flag, char arr[])
         if(tag) return -1;
         else return 0;    
     }
-    else if(flag==3) return 0;
+    else if(flag==2) return 0;
+}
+//读取内容输出函数，将读取到的动态数据内容输出到文件；
+int date_op(struct file_type *p1, struct variaty0 *p2,int num)
+{
+    FILE *fp=NULL;
+    int i=0;
+    fp=fopen("date01.txt","w+");
+    fputs("<",fp);
+    fputs(p1->ft_name,fp);
+    fputs(">\n",fp);
+    for(i=0;i<num;i++)
+    {
+        fputs("# ",fp);
+        fputs(p2[i].va_na,fp);
+        fputs(":",fp);
+        fputs(p2[i].va_tp,fp);
+        fputs(";\n",fp);
+    }
+    fputs("{\n",fp);
+    for(i=0;i<num;i++)
+    {
+        fputs("\t\"",fp);
+        fputs(p2[i].va_na,fp);
+        fputs("\":\"",fp);
+        fputs(p2[i].va_val,fp);
+        fputs("\";\n",fp);
+    }
+    fputs("}\n",fp);
+    fclose(fp);
 }
 int main()
 {
@@ -203,8 +241,7 @@ int main()
             if(ch[0]=='>') //读取完成，退出文件类型标识读取，进行内容转录；
             {
                 ft.ft_flag=ft_check(tmp_f);
-                ft.ft_long=strlen(tmp_f);
-                strcpy(tmp_f,ft.ft_name);
+                strcpy(ft.ft_name,tmp_f);
                 re_flag=0;
                 ft_key=0;
             }
@@ -221,7 +258,7 @@ int main()
             else if(vn_flag==2) tmp_vt[vt_key++]=vt_read(ch[0]);
             if(ch[0]==':' && vn_flag==1) //当读取到字符“:”时，完成该行的变量名读取，校验变量名并写入缓存；
             {
-                if(va_name_check(tmp_vn)==0) //变量名报错流程；
+                if(va_name_check(tmp_vn)==-1) //变量名报错流程；
                 {
                     err_flag=2;
                     re_flag=-1;
@@ -235,9 +272,14 @@ int main()
             }
             if(ch[0]==';' && vn_flag==2) //当读取到结尾符号“;”时，完成该行的变量类型读取，主状态及子状态标识清零；
             {
-                if(va_type_check(tmp_vt)==0) //变量类型报错流程；
+                if(va_type_check(tmp_vt)==-1) //变量类型报错流程；
                 {
                     err_flag=3;
+                    re_flag=-1;
+                }
+                else if(va_ft_check(tmp_vt,ft.ft_flag)==-1) //变量类型和文件类型不匹配报错流程；
+                {
+                    err_flag=6;
                     re_flag=-1;
                 }
                 else
@@ -292,6 +334,8 @@ int main()
             if(va_flag==5 && ch[0]==';') va_flag=0;
             if(va_flag==0 && ch[0]=='}') re_flag=0;
         }
+        if(ch[0]=='}') break;
     }
+    date_op(&ft,var,ma_flag);
     printf("The Application is closed!\n");
 }
